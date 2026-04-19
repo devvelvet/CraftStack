@@ -1,0 +1,92 @@
+# CraftStack Agent configuration
+# This file is auto-generated on first run.
+# It is recommended to create/manage instances via the web UI (the master DB is the source of truth).
+# The instances section below is for initial bootstrap; once connected to the master, DB settings take precedence.
+
+agent:
+  id: ""                        # If empty, a UUID is auto-generated and saved to the file
+  name: ""                      # If empty, the hostname is used
+
+master:
+  addr: "localhost:9090"        # Master gRPC address
+
+# Agent gRPC server (for receiving files/commands from the master)
+grpc:
+  addr: ":9091"
+
+java:
+  path: "java"                  # Java binary path (for Minecraft/Kafka only)
+
+backup:
+  dir: "./backups"              # Backup storage directory
+  max_count: 10                 # Maximum number of backups per instance
+
+# List of instances managed by this agent (for initial bootstrap)
+# Instances created from the web UI are synced automatically via heartbeat.
+instances:
+  # --- Minecraft server example ---
+  # - type: "minecraft"              # Instance type (required)
+  #   name: "survival"               # Instance name (letters, digits, hyphen, underscore, dot)
+  #   port: 25565                    # Server port (cannot be changed after creation)
+  #   work_dir: "./servers/survival" # Working directory (target for Docker volume mount)
+  #   server_jar: "paper.jar"        # JAR file name inside work_dir
+  #   memory_min: "1G"               # JVM minimum memory (-Xms)
+  #   memory_max: "4G"               # JVM maximum memory (-Xmx)
+  #   java_version: "21"             # Java version: 17, 21, 25
+  #   auto_start: true               # Auto-start when the agent starts
+  #   auto_restart: true             # Auto-restart on abnormal exit (up to 5 times, exponential backoff)
+  #   restart_delay_sec: 10          # Wait time before restart (seconds)
+  #   stop_command: "stop"           # Stop command
+  #   accept_eula: true              # Auto-accept Minecraft EULA
+  #   jvm_args:                      # Additional JVM arguments
+  #     - "-XX:+UseG1GC"
+  #     - "-XX:+ParallelRefProcEnabled"
+  #   docker_memory: "6G"            # Docker memory limit (empty = 1.5x of memory_max)
+  #   docker_cpus: "2.0"             # Docker CPU limit (empty = no limit)
+  #   network_name: "craftstack-default"  # Docker network name
+
+  # --- MySQL example ---
+  # - type: "mysql"
+  #   name: "main-db"
+  #   port: 3306
+  #   work_dir: "./servers/main-db"
+  #   service_version: "8.0"         # Docker image tag (default: 8.0)
+  #   auto_start: true
+  #   docker_memory: "2G"
+
+  # --- PostgreSQL example ---
+  # - type: "postgresql"
+  #   name: "analytics-db"
+  #   port: 5432
+  #   work_dir: "./servers/analytics-db"
+  #   service_version: "16"          # Docker image tag (default: 16)
+  #   auto_start: true
+
+  # --- MongoDB example ---
+  # - type: "mongodb"
+  #   name: "log-store"
+  #   port: 27017
+  #   work_dir: "./servers/log-store"
+  #   service_version: "7"           # Docker image tag (default: 7)
+  #   auto_start: true
+
+  # --- Redis example ---
+  # - type: "redis"
+  #   name: "cache"
+  #   port: 6379
+  #   work_dir: "./servers/cache"
+  #   service_version: "7"           # Docker image tag (default: 7)
+  #   auto_start: true
+
+  # --- Kafka example ---
+  # - type: "kafka"
+  #   name: "event-bus"
+  #   port: 9092
+  #   work_dir: "./servers/event-bus"
+  #   service_version: "3.7.0"       # Docker image tag (default: 3.7.0)
+  #   java_version: "21"             # Kafka also supports Java version selection
+  #   auto_start: true
+
+log:
+  level: "info"                 # debug, info, warn, error
+  format: "text"                # text, json

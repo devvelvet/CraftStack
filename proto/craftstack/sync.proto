@@ -1,0 +1,98 @@
+syntax = "proto3";
+
+package craftstack;
+
+option go_package = "craftstack/gen/proto/craftstack";
+
+import "craftstack/agent.proto";
+
+// SyncService handles file synchronization between master and agents.
+service SyncService {
+  // PushFile streams a file from master to agent in chunks.
+  rpc PushFile(stream FileChunk) returns (PushFileResponse);
+
+  // PullFile requests a file from agent (e.g., for backup retrieval).
+  rpc PullFile(PullFileRequest) returns (stream FileChunk);
+
+  // SyncNotify is a server-streaming RPC where master notifies agent of changes.
+  rpc SyncNotify(SyncNotifyRequest) returns (stream SyncEvent);
+
+  // AckSync acknowledges that a sync operation completed.
+  rpc AckSync(AckSyncRequest) returns (AckSyncResponse);
+}
+
+// --- File Transfer ---
+
+message FileChunk {
+  // Metadata sent in the first chunk only
+  FileMetadata metadata = 1;
+  // File data chunk
+  bytes data = 2;
+  // Chunk sequence number (0-indexed)
+  int32 chunk_index = 3;
+  // Total number of chunks
+  int32 total_chunks = 4;
+  // True if this is the last chunk
+  bool is_last = 5;
+}
+
+message FileMetadata {
+  string file_path = 1;       // Relative path from sync root
+  string file_hash = 2;       // SHA-256 hash of the complete file
+  int64 file_size = 3;        // Total file size in bytes
+  string target_agent_id = 4; // Which agent should receive this file
+  string sync_id = 5;         // Unique sync operation ID
+}
+
+message PushFileResponse {
+  bool success = 1;
+  string message = 2;
+  string received_hash = 3;   // Hash of received data for verification
+  string sync_id = 4;
+}
+
+// --- Pull (Agent -> Master) ---
+
+message PullFileRequest {
+  string agent_id = 1;
+  string file_path = 2;
+}
+
+// --- Sync Notifications ---
+
+message SyncNotifyRequest {
+  string agent_id = 1;
+  // Agent sends its current file manifest so master can diff
+  repeated FileInfo current_files = 2;
+}
+
+message FileInfo {
+  string path = 1;
+  string hash = 2;
+  int64 size = 3;
+  int64 modified_at_unix = 4;
+}
+
+message SyncEvent {
+  string sync_id = 1;
+  string file_path = 2;
+  FileAction action = 3;  // Reuses FileAction from agent.proto
+  string file_hash = 4;
+  int64 file_size = 5;
+  // If true, agent should create a backup before applying this change
+  bool backup_before_apply = 6;
+}
+
+// --- Acknowledgement ---
+
+message AckSyncRequest {
+  string sync_id = 1;
+  string agent_id = 2;
+  bool success = 3;
+  string error_message = 4;
+  string received_hash = 5;
+}
+
+message AckSyncResponse {
+  bool acknowledged = 1;
+}

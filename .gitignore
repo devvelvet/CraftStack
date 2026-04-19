@@ -1,0 +1,33 @@
+# binaries & build output
+/bin/
+/dist/
+*.exe
+*.test
+*.out
+craftstack-master
+craftstack-agent
+
+# local data
+/data/
+*.db
+*.db-shm
+*.db-wal
+
+# local config overrides
+configs/*.local.yaml
+
+# editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Windows resource binaries (regenerate via go-winres)
+cmd/*/rsrc_windows_*.syso
+
+# Go
+/vendor/
+*.prof
+
+# logs
+*.log

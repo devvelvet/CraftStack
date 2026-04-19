@@ -1,0 +1,483 @@
+syntax = "proto3";
+
+package craftstack;
+
+option go_package = "craftstack/gen/proto/craftstack";
+
+import "google/protobuf/timestamp.proto";
+
+// AgentService handles agent registration, heartbeat, and instance control.
+service AgentService {
+  // RegisterAgent is called once when the agent starts up.
+  rpc RegisterAgent(RegisterAgentRequest) returns (RegisterAgentResponse);
+
+  // Heartbeat is a bidirectional stream for health checks and status updates.
+  rpc Heartbeat(stream HeartbeatRequest) returns (stream HeartbeatResponse);
+
+  // ControlInstance sends start/stop/restart commands to an agent's instance.
+  rpc ControlInstance(ControlInstanceRequest) returns (ControlInstanceResponse);
+
+  // ListInstances returns all instances managed by a specific agent.
+  rpc ListInstances(ListInstancesRequest) returns (ListInstancesResponse);
+
+  // BackupInstance triggers a backup of a specific instance's data.
+  rpc BackupInstance(BackupInstanceRequest) returns (BackupInstanceResponse);
+
+  // CreateInstance creates a new instance on the agent.
+  // For Minecraft, the JAR file binary is included in the request.
+  rpc CreateInstance(CreateInstanceRequest) returns (CreateInstanceResponse);
+
+  // CheckDocker checks if Docker is installed and running on the agent.
+  rpc CheckDocker(CheckDockerRequest) returns (CheckDockerResponse);
+
+  // InstallDocker is retained for compatibility but now only verifies Docker
+  // presence. CraftStack does not auto-install system dependencies; operators
+  // must install Docker manually on each agent host.
+  rpc InstallDocker(InstallDockerRequest) returns (InstallDockerResponse);
+
+  // DeleteInstance removes an instance from the agent (stops container, optionally removes data).
+  rpc DeleteInstance(DeleteInstanceRequest) returns (DeleteInstanceResponse);
+
+  // RestoreBackup restores an instance from a backup file.
+  rpc RestoreBackup(RestoreBackupRequest) returns (RestoreBackupResponse);
+
+  // --- Docker Network RPCs ---
+
+  // CreateNetwork creates a Docker network on the agent.
+  rpc CreateNetwork(CreateNetworkRequest) returns (CreateNetworkResponse);
+
+  // DeleteNetwork removes a Docker network from the agent.
+  rpc DeleteNetwork(DeleteNetworkRequest) returns (DeleteNetworkResponse);
+
+  // ListNetworks lists all Docker networks on the agent.
+  rpc ListNetworks(ListNetworksRequest) returns (ListNetworksResponse);
+
+  // ConnectNetwork connects a container to a Docker network.
+  rpc ConnectNetwork(ConnectNetworkRequest) returns (ConnectNetworkResponse);
+
+  // DisconnectNetwork disconnects a container from a Docker network.
+  rpc DisconnectNetwork(DisconnectNetworkRequest) returns (DisconnectNetworkResponse);
+
+  // --- WireGuard Mesh RPCs ---
+
+  // ConfigureWireGuard configures WireGuard tunnel on the agent.
+  rpc ConfigureWireGuard(ConfigureWireGuardRequest) returns (ConfigureWireGuardResponse);
+
+  // WireGuardStatus returns WireGuard installation and tunnel status.
+  rpc WireGuardStatus(WireGuardStatusRequest) returns (WireGuardStatusResponse);
+
+  // UpdateDNSRecords pushes DNS records to the agent's embedded DNS server.
+  rpc UpdateDNSRecords(UpdateDNSRecordsRequest) returns (UpdateDNSRecordsResponse);
+
+  // UploadServerData uploads a large file (JAR/ZIP) to an instance via client streaming.
+  // Breaks files into ~4MB chunks to bypass the default 64MB gRPC message limit.
+  rpc UploadServerData(stream UploadServerDataRequest) returns (UploadServerDataResponse);
+}
+
+// --- Register ---
+
+message RegisterAgentRequest {
+  string agent_id = 1;
+  string name = 2;
+  string address = 3;
+  int32 cpu_cores = 4;
+  int64 memory_mb = 5;
+  string os_info = 6;
+}
+
+message RegisterAgentResponse {
+  bool success = 1;
+  string agent_id = 2;  // Assigned or confirmed agent ID
+  string message = 3;
+  // Instances registered for this agent in the master DB (for agent startup initialization)
+  repeated InstanceConfig assigned_instances = 4;
+}
+
+// --- Heartbeat ---
+
+message HeartbeatRequest {
+  string agent_id = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  AgentStatus status = 3;
+  repeated InstanceStatus instances = 4;
+}
+
+message HeartbeatResponse {
+  google.protobuf.Timestamp timestamp = 1;
+  // Commands the master wants the agent to execute
+  repeated PendingCommand commands = 2;
+  // Latest instance list from master DB (for agent sync)
+  repeated InstanceConfig assigned_instances = 3;
+  // Cross-node DNS records (all instances in the mesh network)
+  repeated DNSRecord dns_records = 4;
+}
+
+message AgentStatus {
+  double cpu_usage_percent = 1;
+  double memory_usage_percent = 2;
+  int64 memory_used_mb = 3;
+  int64 disk_free_mb = 4;
+  int64 memory_total_mb = 5;
+  int64 disk_total_mb = 6;
+  int64 disk_used_mb = 7;
+}
+
+message InstanceStatus {
+  string instance_id = 1;
+  string name = 2;
+  InstanceState state = 3;
+  int32 player_count = 4;
+  int64 memory_used_mb = 5;
+  double cpu_percent = 6;
+  int64 uptime_seconds = 7;
+  // Instance configuration (sent at registration)
+  int32 port = 8;
+  string memory_min = 9;
+  string memory_max = 10;
+  string server_jar = 11;
+  string work_dir = 12;
+  string java_path = 13;
+  // Instance type: minecraft, mysql, postgresql, mongodb, redis, kafka
+  string instance_type = 14;
+  int64 net_rx_bytes = 15;      // Network RX bytes
+  int64 net_tx_bytes = 16;      // Network TX bytes
+  int64 block_read_bytes = 17;  // Disk read bytes
+  int64 block_write_bytes = 18; // Disk write bytes
+  int64 memory_limit_mb = 19;   // Memory limit (MB)
+}
+
+// InstanceConfig is the master-to-agent instance definition (source of truth = DB).
+message InstanceConfig {
+  string instance_id = 1;     // Format: agentID-name
+  string name = 2;
+  int32 port = 3;
+  string memory_min = 4;
+  string memory_max = 5;
+  string server_jar = 6;
+  string work_dir = 7;
+  string java_path = 8;
+  bool auto_start = 9;
+  bool auto_restart = 10;
+  int32 restart_delay_sec = 11;
+  string stop_command = 12;
+  repeated string jvm_args = 13;
+  bool accept_eula = 14;
+  // Instance type: minecraft, mysql, postgresql, mongodb, redis, kafka
+  string instance_type = 15;
+  string service_version = 16;
+  // Docker image (empty = default image for the type)
+  string docker_image = 17;
+  // Java version (17, 21, 25)
+  string java_version = 18;
+  // Custom Dockerfile / docker-compose.yml
+  string custom_dockerfile = 19;
+  string custom_compose = 20;
+  // Docker network name (empty = craftstack-default)
+  string network_name = 21;
+  // Docker --memory limit (e.g. "2G", empty = 1.5x of memory_max)
+  string docker_memory = 22;
+  // Docker --cpus limit (e.g. "2.0", empty = no limit)
+  string docker_cpus = 23;
+}
+
+enum InstanceState {
+  INSTANCE_STATE_UNKNOWN = 0;
+  INSTANCE_STATE_STOPPED = 1;
+  INSTANCE_STATE_STARTING = 2;
+  INSTANCE_STATE_RUNNING = 3;
+  INSTANCE_STATE_STOPPING = 4;
+  INSTANCE_STATE_CRASHED = 5;
+}
+
+// --- Control ---
+
+message ControlInstanceRequest {
+  string agent_id = 1;
+  string instance_id = 2;
+  InstanceAction action = 3;
+}
+
+enum InstanceAction {
+  INSTANCE_ACTION_UNSPECIFIED = 0;
+  INSTANCE_ACTION_START = 1;
+  INSTANCE_ACTION_STOP = 2;
+  INSTANCE_ACTION_RESTART = 3;
+  INSTANCE_ACTION_KILL = 4;
+}
+
+message ControlInstanceResponse {
+  bool success = 1;
+  string message = 2;
+  InstanceState new_state = 3;
+}
+
+message PendingCommand {
+  string command_id = 1;
+  oneof command {
+    ControlInstanceRequest control = 2;
+    SyncFileNotification sync = 3;
+  }
+}
+
+message SyncFileNotification {
+  string file_path = 1;
+  string file_hash = 2;
+  int64 file_size = 3;
+  FileAction action = 4;
+}
+
+enum FileAction {
+  FILE_ACTION_UNSPECIFIED = 0;
+  FILE_ACTION_CREATE = 1;
+  FILE_ACTION_UPDATE = 2;
+  FILE_ACTION_DELETE = 3;
+}
+
+// --- List ---
+
+message ListInstancesRequest {
+  string agent_id = 1;
+}
+
+message ListInstancesResponse {
+  repeated InstanceStatus instances = 1;
+}
+
+// --- Backup ---
+
+message BackupInstanceRequest {
+  string agent_id = 1;
+  string instance_id = 2;
+  string label = 3;  // Optional label for the backup (e.g., "manual", "scheduled")
+}
+
+message BackupInstanceResponse {
+  bool success = 1;
+  string message = 2;
+  string file_path = 3;
+  int64 file_size = 4;
+  string checksum = 5;
+}
+
+// --- Create Instance ---
+
+message CreateInstanceRequest {
+  string name = 1;             // Instance name (e.g. "survival")
+  int32 port = 2;              // Server port
+  string memory_min = 3;       // Minimum memory (e.g. "512M")
+  string memory_max = 4;       // Maximum memory (e.g. "4G")
+  string server_jar_name = 5;  // JAR file name (e.g. "paper.jar")
+  bytes server_jar_data = 6;   // JAR file binary data
+  bool auto_start = 7;         // Auto-start when agent starts
+  bool auto_restart = 8;       // Auto-restart on abnormal exit
+  bool accept_eula = 9;        // Auto-accept EULA
+  string java_path = 10;       // Java path (empty = default)
+  repeated string jvm_args = 11; // Additional JVM arguments
+  bool start_after_create = 12;  // Start immediately after creation
+  // Instance type: minecraft, mysql, postgresql, mongodb, redis, kafka
+  string instance_type = 13;
+  string service_version = 14;  // Service version (e.g. "8.0.35", "7.0.15")
+  // Docker image (empty = default image for the type)
+  string docker_image = 15;
+  // Java version (17, 21, 25 -- Minecraft/Kafka only, empty = 21)
+  string java_version = 16;
+  // Custom Dockerfile (empty = use default image)
+  string custom_dockerfile = 17;
+  // Custom docker-compose.yml (empty = not used)
+  string custom_compose = 18;
+  // Docker network name (empty = craftstack-default)
+  string network_name = 19;
+  // Existing server ZIP file name (uploads the entire server folder as a ZIP)
+  string server_zip_name = 20;
+  // Binary data of the existing server ZIP file
+  bytes server_zip_data = 21;
+}
+
+message CreateInstanceResponse {
+  bool success = 1;
+  string message = 2;
+  string instance_id = 3;     // Created instance ID
+}
+
+// --- Delete Instance ---
+
+message DeleteInstanceRequest {
+  string instance_id = 1;     // Instance ID
+  bool remove_data = 2;       // If true, also removes volume data (work_dir)
+}
+
+message DeleteInstanceResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// --- Restore Backup ---
+
+message RestoreBackupRequest {
+  string instance_id = 1;     // Instance ID
+  string backup_path = 2;     // Backup file path
+  bool stop_before = 3;       // Whether to stop the instance before restore
+}
+
+message RestoreBackupResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// --- Docker ---
+
+message CheckDockerRequest {}
+
+message CheckDockerResponse {
+  bool installed = 1;
+  bool running = 2;
+  string version = 3;
+  string message = 4;
+}
+
+message InstallDockerRequest {}
+
+message InstallDockerResponse {
+  bool success = 1;
+  string version = 2;
+  string message = 3;
+}
+
+// --- Docker Network Messages ---
+
+message CreateNetworkRequest {
+  string name = 1;       // Network name
+  string driver = 2;     // bridge, overlay, etc.
+  string subnet = 3;     // Subnet (e.g. "172.20.0.0/16", empty = auto)
+  string gateway = 4;    // Gateway (empty = auto)
+}
+
+message CreateNetworkResponse {
+  bool success = 1;
+  string message = 2;
+  string network_id = 3; // Docker network ID
+}
+
+message DeleteNetworkRequest {
+  string name = 1;       // Network name
+}
+
+message DeleteNetworkResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message ListNetworksRequest {}
+
+message ListNetworksResponse {
+  repeated DockerNetworkInfo networks = 1;
+}
+
+message DockerNetworkInfo {
+  string id = 1;         // Docker network ID
+  string name = 2;       // Network name
+  string driver = 3;     // bridge, overlay, etc.
+  string scope = 4;      // local, global
+  string subnet = 5;     // IPAM subnet
+  string gateway = 6;    // IPAM gateway
+  int32 container_count = 7; // Number of connected containers
+}
+
+message ConnectNetworkRequest {
+  string network_name = 1;   // Network name
+  string container_name = 2; // Container name
+  string alias = 3;          // Alias within the network (DNS)
+  string ip_address = 4;     // Static IP (empty = auto)
+}
+
+message ConnectNetworkResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message DisconnectNetworkRequest {
+  string network_name = 1;   // Network name
+  string container_name = 2; // Container name
+}
+
+message DisconnectNetworkResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// --- WireGuard Mesh Messages ---
+
+message ConfigureWireGuardRequest {
+  string private_key = 1;       // WireGuard private key
+  string address = 2;           // WG interface address (e.g. "10.10.0.1/16")
+  int32 listen_port = 3;        // UDP listen port (default 51820)
+  repeated WireGuardPeer peers = 4;
+  string dns_listen_ip = 5;     // Embedded DNS server listen IP (= IP part of WG address)
+}
+
+message WireGuardPeer {
+  string public_key = 1;        // Peer public key
+  string endpoint = 2;          // Peer endpoint (e.g. "203.0.113.5:51820")
+  repeated string allowed_ips = 3; // Allowed IP ranges (e.g. ["10.10.0.2/32", "172.30.2.0/24"])
+  int32 keepalive = 4;          // PersistentKeepalive (seconds, for NAT traversal)
+}
+
+message ConfigureWireGuardResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message WireGuardStatusRequest {}
+
+message WireGuardStatusResponse {
+  bool installed = 1;
+  bool active = 2;
+  string public_key = 3;
+  string address = 4;
+  repeated WireGuardPeerStatus peers = 5;
+}
+
+message WireGuardPeerStatus {
+  string public_key = 1;
+  string endpoint = 2;
+  int64 last_handshake_unix = 3;
+  int64 rx_bytes = 4;
+  int64 tx_bytes = 5;
+  bool connected = 6;           // Connection state based on recent handshake
+}
+
+message UpdateDNSRecordsRequest {
+  repeated DNSRecord records = 1;
+}
+
+message UpdateDNSRecordsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 record_count = 3;
+}
+
+message DNSRecord {
+  string fqdn = 1;             // e.g. "main-db.craftstack.internal"
+  string ip_address = 2;       // Docker IP (e.g. "172.30.2.10")
+  string instance_id = 3;      // Instance ID (for reference)
+  string node_id = 4;          // Host node ID (for reference)
+}
+
+// --- Upload Server Data (Client Streaming) ---
+
+message UploadServerDataRequest {
+  // Metadata (only in the first chunk)
+  string instance_name = 1;    // Instance name
+  string file_type = 2;        // "jar" or "zip"
+  string file_name = 3;        // File name (e.g. "paper.jar", "server.zip")
+  int64 total_size = 5;        // Total file size (bytes)
+
+  // Chunk data (in every chunk)
+  bytes chunk_data = 4;        // File chunk (~4MB each)
+}
+
+message UploadServerDataResponse {
+  bool success = 1;
+  string message = 2;
+  string detected_jar = 3;     // JAR file name auto-detected from the ZIP
+}

@@ -1,0 +1,114 @@
+syntax = "proto3";
+
+package craftstack;
+
+option go_package = "craftstack/gen/proto/craftstack";
+
+import "google/protobuf/timestamp.proto";
+
+// MetricsService handles log streaming, metrics reporting, and console commands.
+service MetricsService {
+  // StreamLogs streams Minecraft server logs from agent to master.
+  rpc StreamLogs(StreamLogsRequest) returns (stream LogEntry);
+
+  // ReportMetrics sends periodic OS/JVM metrics from agent.
+  rpc ReportMetrics(stream MetricsReport) returns (MetricsAck);
+
+  // SendCommand sends a console command from master to agent's Minecraft stdin.
+  rpc SendCommand(ConsoleCommandRequest) returns (ConsoleCommandResponse);
+}
+
+// --- Log Streaming ---
+
+message StreamLogsRequest {
+  string agent_id = 1;
+  string instance_id = 2;
+  // Number of historical lines to send first (tail)
+  int32 tail_lines = 3;
+}
+
+message LogEntry {
+  string instance_id = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  LogLevel level = 3;
+  string message = 4;
+  string source = 5;  // e.g., "server", "plugin/WorldEdit"
+}
+
+enum LogLevel {
+  LOG_LEVEL_UNSPECIFIED = 0;
+  LOG_LEVEL_DEBUG = 1;
+  LOG_LEVEL_INFO = 2;
+  LOG_LEVEL_WARN = 3;
+  LOG_LEVEL_ERROR = 4;
+  LOG_LEVEL_FATAL = 5;
+}
+
+// --- Metrics ---
+
+message MetricsReport {
+  string agent_id = 1;
+  string instance_id = 2;
+  google.protobuf.Timestamp timestamp = 3;
+
+  // OS-level metrics
+  OsMetrics os_metrics = 4;
+
+  // JVM/Minecraft specific metrics
+  JvmMetrics jvm_metrics = 5;
+
+  // Game-specific metrics
+  GameMetrics game_metrics = 6;
+
+  // Server log lines (for console streaming)
+  repeated string log_lines = 7;
+}
+
+message OsMetrics {
+  double cpu_usage_percent = 1;
+  int64 memory_total_mb = 2;
+  int64 memory_used_mb = 3;
+  int64 disk_total_mb = 4;
+  int64 disk_used_mb = 5;
+  double load_average_1m = 6;
+  double load_average_5m = 7;
+  int64 network_rx_bytes = 8;
+  int64 network_tx_bytes = 9;
+}
+
+message JvmMetrics {
+  int64 heap_used_mb = 1;
+  int64 heap_max_mb = 2;
+  int64 non_heap_used_mb = 3;
+  int32 gc_count = 4;
+  int64 gc_time_ms = 5;
+  int32 thread_count = 6;
+}
+
+message GameMetrics {
+  int32 player_count = 1;
+  int32 max_players = 2;
+  double tps = 3;             // Ticks per second (target: 20.0)
+  int32 loaded_chunks = 4;
+  int32 loaded_entities = 5;
+  int64 uptime_seconds = 6;
+}
+
+message MetricsAck {
+  bool success = 1;
+  int32 received_count = 2;
+}
+
+// --- Console Command ---
+
+message ConsoleCommandRequest {
+  string agent_id = 1;
+  string instance_id = 2;
+  string command = 3;
+}
+
+message ConsoleCommandResponse {
+  bool success = 1;
+  string output = 2;
+  string error = 3;
+}

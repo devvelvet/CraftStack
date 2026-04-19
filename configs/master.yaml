@@ -1,0 +1,63 @@
+# CraftStack Master configuration
+# This file is auto-generated on first run.
+# All items have default values, so modify only the parts you need.
+
+server:
+  http_addr: ":8080"       # Web UI port
+  grpc_addr: ":9090"       # gRPC port (for agent connections)
+
+database:
+  path: "./data/craftstack.db"  # SQLite database path (WAL mode)
+
+# File sync configuration
+# It is recommended to manage sync mappings via the web UI (http://<master>:8080/sync).
+# The entries below are for initial bootstrap; once mappings are registered in the DB, DB settings take precedence.
+sync:
+  debounce_ms: 500         # File change detection debounce interval (ms)
+  # mappings:
+  #   - name: "Shared plugins"
+  #     src: "/path/to/plugins"       # Source folder path on the master
+  #     dest: "plugins"               # Path relative to agent instance work_dir
+  #     targets: ["*"]                # "*" = all, or list of agent IDs/names
+  #     exclude:                      # Exclude patterns (glob)
+  #       - "*.tmp"
+  #       - ".git/**"
+
+# Observability (Prometheus / InfluxDB / Grafana)
+# - Grafana is not auto-configured by this app. Manually import docs/grafana/craftstack-dashboard.json.
+# - The /metrics endpoint does not require app login authentication. Scrape only from internal networks/localhost.
+observability:
+  prometheus:
+    enabled: false
+    path: "/metrics"
+  influxdb:
+    enabled: false
+    url: "http://localhost:8086"
+    token: ""
+    org: "craftstack"
+    bucket: "craftstack"
+    interval_ms: 15000
+  grafana_url: ""          # Hint for UI link (optional)
+
+# devvelvet/mc-operator integration
+# - When enabled + url is set, the master creates an mc-operator client.
+# - forward_path is the webhook bridge for Jenkins -> CraftStack -> mc-operator.
+# - shared_token is the token that inbound Jenkins requests must present.
+mc_operator:
+  enabled: false
+  url: "http://localhost:8080"
+  token: ""                # mc-operator's MC_JENKINS_TOKEN
+  jenkins:
+    forward_path: "/webhooks/jenkins"
+    shared_token: ""
+  follow_events: false     # Receive mc-operator /api/v1/events SSE stream (logged)
+  # mc-imagegen CLI wrapper (cmd/mc-imagegen binary from the mc-operator repository)
+  # Setting binary enables the POST /api/mcoperator/imagegen endpoint.
+  imagegen:
+    binary: ""             # e.g. "/usr/local/bin/mc-imagegen" (empty disables it)
+    output_dir: ""         # Output directory for generated artifacts (empty = $TMPDIR/craftstack-imagegen)
+    timeout_ms: 120000
+
+log:
+  level: "info"            # debug, info, warn, error
+  format: "text"           # text, json

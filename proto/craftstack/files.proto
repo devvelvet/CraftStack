@@ -1,0 +1,114 @@
+syntax = "proto3";
+
+package craftstack;
+
+option go_package = "craftstack/gen/proto/craftstack";
+
+// FileManagerService handles file browsing, reading, writing within instance directories.
+// Runs on the agent, called by master on behalf of web UI.
+service FileManagerService {
+  // ListDirectory returns the contents of a directory.
+  rpc ListDirectory(ListDirectoryRequest) returns (ListDirectoryResponse);
+
+  // ReadFile reads a file's content (up to a size limit).
+  rpc ReadFile(ReadFileRequest) returns (ReadFileResponse);
+
+  // WriteFile writes content to a file (create or overwrite).
+  rpc WriteFile(WriteFileRequest) returns (WriteFileResponse);
+
+  // DeleteFile deletes a file or empty directory.
+  rpc DeleteFile(DeleteFileRequest) returns (DeleteFileResponse);
+
+  // CreateDirectory creates a new directory.
+  rpc CreateDirectory(CreateDirectoryRequest) returns (CreateDirectoryResponse);
+
+  // RenameFile renames/moves a file or directory.
+  rpc RenameFile(RenameFileRequest) returns (RenameFileResponse);
+}
+
+// --- List Directory ---
+
+message ListDirectoryRequest {
+  string instance_id = 1;
+  string path = 2;  // relative path within instance work_dir (empty = root)
+}
+
+message ListDirectoryResponse {
+  string current_path = 1;
+  repeated FileEntry entries = 2;
+}
+
+message FileEntry {
+  string name = 1;
+  string path = 2;       // relative path from work_dir
+  bool is_dir = 3;
+  int64 size = 4;
+  int64 modified_unix = 5;
+  string permissions = 6;
+}
+
+// --- Read File ---
+
+message ReadFileRequest {
+  string instance_id = 1;
+  string path = 2;
+}
+
+message ReadFileResponse {
+  string path = 1;
+  bytes content = 2;
+  int64 size = 3;
+  bool truncated = 4;     // true if file was too large and content was truncated
+}
+
+// --- Write File ---
+
+message WriteFileRequest {
+  string instance_id = 1;
+  string path = 2;
+  bytes content = 3;
+  bool create_dirs = 4;   // create parent directories if they don't exist
+}
+
+message WriteFileResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// --- Delete ---
+
+message DeleteFileRequest {
+  string instance_id = 1;
+  string path = 2;
+  bool recursive = 3;     // for directories
+}
+
+message DeleteFileResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// --- Create Directory ---
+
+message CreateDirectoryRequest {
+  string instance_id = 1;
+  string path = 2;
+}
+
+message CreateDirectoryResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// --- Rename ---
+
+message RenameFileRequest {
+  string instance_id = 1;
+  string old_path = 2;
+  string new_path = 3;
+}
+
+message RenameFileResponse {
+  bool success = 1;
+  string message = 2;
+}
