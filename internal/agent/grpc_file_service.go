@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 	"fmt"
+	"io"
 	"io/fs"
 	"log/slog"
 	"os"
@@ -232,9 +233,83 @@ func (s *fileManagerServiceImpl) RenameFile(ctx context.Context, req *pb.RenameF
 		return nil, fmt.Errorf("name change failed: %w", err)
 	}
 
-	s.log.Info("file name change", "instance", req.InstanceId, "old", req.OldPath, "new", req.NewPath)
+	s.log.Info("file renamed", "instance", req.InstanceId, "old", req.OldPath, "new", req.NewPath)
 	return &pb.RenameFileResponse{
 		Success: true,
-		Message: "name change",
+		Message: "renamed",
 	}, nil
+}
+
+// CopyFile copies a file or directory (recursively for directories) within an
+// instance's work directory.
+func (s *fileManagerServiceImpl) CopyFile(ctx context.Context, req *pb.CopyFileRequest) (*pb.CopyFileResponse, error) {
+	src, err := s.resolveInstancePath(req.InstanceId, req.SrcPath)
+	if err != nil {
+		return nil, err
+	}
+	dst, err := s.resolveInstancePath(req.InstanceId, req.DstPath)
+	if err != nil {
+		return nil, err
+	}
+	if src == dst {
+		return nil, fmt.Errorf("source and destination are the same")
+	}
+	if !req.Overwrite {
+		if _, err := os.Stat(dst); err == nil {
+			return nil, fmt.Errorf("destination already exists: %s", req.DstPath)
+		}
+	}
+	srcInfo, err := os.Stat(src)
+	if err != nil {
+		return nil, fmt.Errorf("stat source: %w", err)
+	}
+	if strings.HasPrefix(dst+string(os.PathSeparator), src+string(os.PathSeparator)) {
+		return nil, fmt.Errorf("cannot copy a directory into itself")
+	}
+	if err := copyPath(src, dst, srcInfo); err != nil {
+		return nil, fmt.Errorf("copy failed: %w", err)
+	}
+	s.log.Info("file copied", "instance", req.InstanceId, "src", req.SrcPath, "dst", req.DstPath)
+	return &pb.CopyFileResponse{Success: true, Message: "copied"}, nil
+}
+
+// copyPath copies src to dst. If src is a directory, copies recursively.
+func copyPath(src, dst string, srcInfo os.FileInfo) error {
+	if srcInfo.IsDir() {
+		if err := os.MkdirAll(dst, srcInfo.Mode()); err != nil {
+			return err
+		}
+		entries, err := os.ReadDir(src)
+		if err != nil {
+			return err
+		}
+		for _, e := range entries {
+			si, err := e.Info()
+			if err != nil {
+				return err
+			}
+			if err := copyPath(filepath.Join(src, e.Name()), filepath.Join(dst, e.Name()), si); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	// regular file
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+	if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
+		return err
+	}
+	out, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, srcInfo.Mode())
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+	if _, err := io.Copy(out, in); err != nil {
+		return err
+	}
+	return nil
 }

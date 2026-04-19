@@ -112,11 +112,15 @@ Unified management of six service types running as Docker containers.
 ### File management
 
 - Browse remote server instance directories directly from the web
-- Create, delete, and rename files/folders
+- Create, delete, rename, **duplicate**, **copy / cut / paste**, **drag-to-move** files and folders
+- **Multi-select** with `Ctrl/Cmd+Click`; keyboard shortcuts `Ctrl+C/X/V/D`, `F2`, `Delete`
 - Drag-and-drop file upload
 - **Monaco Editor** embedded (VS Code engine) — syntax highlighting for 20+ file formats
 - Auto-detect binary files and offer download
 - `Ctrl+S` keyboard shortcut to save
+- **Per-file Git history and one-click rollback** — every mutation is auto-committed with the acting user's identity; right-click a file → *history* to view / restore any prior version
+- **Full audit trail** — file operations (`write`, `delete`, `rename`, `copy`, `move`, `upload`, `mkdir`, `restore`) are logged with user attribution to the *Audit* page
+- See [docs/file-management.md](docs/file-management.md) for details
 
 ### Database browser
 
@@ -790,6 +794,17 @@ go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 go install github.com/bufbuild/buf/cmd/buf@latest
 ```
+
+---
+
+## Documentation
+
+| Doc | Contents |
+|---|---|
+| [docs/file-management.md](docs/file-management.md) | File manager UI, audit log, Git history / rollback, REST endpoints |
+| [docs/monitoring.md](docs/monitoring.md) | Prometheus scrape, InfluxDB v2 push, exported metrics, Grafana import |
+| [docs/mc-operator-integration.md](docs/mc-operator-integration.md) | Jenkins webhook bridge, mc-imagegen CLI wrapper, SSE events |
+| [docs/grafana/craftstack-dashboard.json](docs/grafana/craftstack-dashboard.json) | Importable Grafana dashboard |
 
 ---
 

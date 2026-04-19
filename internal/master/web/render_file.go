@@ -54,6 +54,9 @@ func buildFileManagerHTML(data map[string]interface{}) string {
 .fm-ctx-i.red{color:#f48771}
 .fm-ctx-sep{height:1px;background:#454545;margin:4px 0}
 .fm-drop{position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;background:#007acc22;border:2px dashed #007acc}
+.fm-ti.multi{background:#094771}
+.fm-ti.cut{opacity:.55;font-style:italic}
+.fm-ti.drop-target{background:#007acc55;outline:1px dashed #007acc}
 .fm-upload{padding:6px 10px;border-top:1px solid #333;font-size:11px}
 .fm-upload progress{width:100%%;height:3px;margin-top:4px}
 .fm-mobile-toggle{display:none;position:absolute;top:6px;left:6px;z-index:10;background:#333;border:1px solid #555;color:#ccc;border-radius:4px;padding:4px 8px;font-size:18px;cursor:pointer;line-height:1}
@@ -181,6 +184,29 @@ async function apiUpload(file,dir){
     const r=await fetch(API+'/files/upload',{method:'POST',body:fd});
     return await r.json();
 }
+async function apiRename(oldPath,newPath){
+    const r=await fetch(API+'/files/rename',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({old_path:oldPath,new_path:newPath})});
+    return await r.json();
+}
+async function apiCopy(src,dst,overwrite){
+    const r=await fetch(API+'/files/copy',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({src_path:src,dst_path:dst,overwrite:!!overwrite})});
+    return await r.json();
+}
+async function apiMove(src,dst){
+    const r=await fetch(API+'/files/move',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({src_path:src,dst_path:dst})});
+    return await r.json();
+}
+async function apiBatchDelete(paths,recursive){
+    const r=await fetch(API+'/files/batch-delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({paths,recursive:!!recursive})});
+    return await r.json();
+}
+
+// ── Clipboard / selection state ──
+state.clipboard=null;   // { op:'copy'|'cut', paths:[...] }
+state.selected=new Set();
+function joinPath(dir,name){return dir&&dir!==''?(dir+'/'+name):name}
+function parentDir(p){const i=(p||'').lastIndexOf('/');return i<0?'':p.slice(0,i)}
+function baseName(p){const i=(p||'').lastIndexOf('/');return i<0?(p||''):p.slice(i+1)}
 
 // ── Tree rendering ──
 function renderTree(){
@@ -191,8 +217,14 @@ function renderTree(){
 function renderNodes(parent,nodes,depth){
     for(const n of nodes){
         const row=document.createElement('div');
-        row.className='fm-ti'+(n.path===state.sel?' sel':'');
+        let cls='fm-ti'+(n.path===state.sel?' sel':'');
+        if(state.selected.has(n.path))cls+=' multi';
+        if(state.clipboard&&state.clipboard.op==='cut'&&state.clipboard.paths.includes(n.path))cls+=' cut';
+        row.className=cls;
         row.style.paddingLeft=(depth*16+8)+'px';
+        row.draggable=true;
+        row.dataset.path=n.path;
+        row.dataset.isdir=n.is_dir?'1':'0';
         // chevron
         const chev=document.createElement('span');
         chev.className='fm-chev'+(n.is_dir&&n.expanded?' open':'');
@@ -216,9 +248,38 @@ function renderNodes(parent,nodes,depth){
             act.addEventListener('click',function(e){e.stopPropagation();const r=act.getBoundingClientRect();onTreeCtx({clientX:r.left,clientY:r.bottom,preventDefault:()=>{},stopPropagation:()=>{}},n)});
             row.appendChild(act);
         }
-        // click
-        row.addEventListener('click',function(e){e.stopPropagation();onTreeClick(n)});
+        // click (with modifier-aware multi-select)
+        row.addEventListener('click',function(e){
+            e.stopPropagation();
+            if(e.ctrlKey||e.metaKey){
+                if(state.selected.has(n.path))state.selected.delete(n.path); else state.selected.add(n.path);
+                renderTree(); return;
+            }
+            if(!e.shiftKey)state.selected.clear();
+            state.selected.add(n.path);
+            onTreeClick(n);
+        });
         row.addEventListener('contextmenu',function(e){e.preventDefault();e.stopPropagation();onTreeCtx(e,n)});
+        // drag & drop move
+        row.addEventListener('dragstart',function(e){
+            const paths=(state.selected.has(n.path)&&state.selected.size>1)?Array.from(state.selected):[n.path];
+            e.dataTransfer.effectAllowed='move';
+            e.dataTransfer.setData('application/x-craftstack-paths',JSON.stringify(paths));
+            e.dataTransfer.setData('text/plain',paths.join('\n'));
+        });
+        if(n.is_dir){
+            row.addEventListener('dragover',function(e){
+                if(e.dataTransfer.types.includes('application/x-craftstack-paths')){e.preventDefault();e.dataTransfer.dropEffect='move';row.classList.add('drop-target')}
+            });
+            row.addEventListener('dragleave',function(){row.classList.remove('drop-target')});
+            row.addEventListener('drop',function(e){
+                e.preventDefault();e.stopPropagation();row.classList.remove('drop-target');
+                const raw=e.dataTransfer.getData('application/x-craftstack-paths');
+                if(!raw)return;
+                let paths; try{paths=JSON.parse(raw)}catch(_){return}
+                moveIntoDir(paths,n.path);
+            });
+        }
         parent.appendChild(row);
         // children
         if(n.is_dir&&n.expanded&&n.children.length>0){
@@ -251,8 +312,161 @@ function onTreeCtx(event,node){
         items.push({label:'download',action:()=>{window.location.href=API+'/files/download?path='+encodeURIComponent(node.path)}});
         items.push({sep:true});
     }
-    items.push({label:'delete',cls:'red',action:()=>deleteItem(node.path,node.is_dir)});
+    // Selection-aware clipboard: operate on the multi-selection if the clicked
+    // node is part of it, otherwise operate on just this node.
+    const selPaths = state.selected.has(node.path) && state.selected.size>1
+        ? Array.from(state.selected) : [node.path];
+    items.push({label:'cut',action:()=>{state.clipboard={op:'cut',paths:selPaths};showToast('cut '+selPaths.length+' item(s)','info');renderTree()}});
+    items.push({label:'copy',action:()=>{state.clipboard={op:'copy',paths:selPaths};showToast('copied '+selPaths.length+' item(s)','info')}});
+    const canPaste = state.clipboard && state.clipboard.paths.length>0;
+    items.push({label:'paste'+(canPaste?'':' (empty)'),action:canPaste?(()=>pasteInto(node.is_dir?node.path:parentDir(node.path))):null});
+    items.push({label:'rename',action:()=>renameItem(node.path)});
+    items.push({label:'duplicate',action:()=>duplicateItem(node.path)});
+    items.push({label:'history',action:()=>showHistory(node.path)});
+    items.push({sep:true});
+    items.push({label:'delete'+(selPaths.length>1?' ('+selPaths.length+')':''),cls:'red',action:()=>deleteItems(selPaths)});
     showCtx(event.clientX,event.clientY,items);
+}
+
+async function renameItem(p){
+    const cur=baseName(p);
+    const nn=prompt('new name:',cur);
+    if(!nn||nn===cur)return;
+    const np=joinPath(parentDir(p),nn);
+    try{
+        const d=await apiRename(p,np);
+        if(d.success){showToast('renamed','success');await FM.refresh();}
+        else{showToast(d.error||d.message,'error')}
+    }catch(e){showToast('rename failed: '+e.message,'error')}
+}
+
+async function duplicateItem(p){
+    const dir=parentDir(p);const name=baseName(p);
+    // "file.txt" → "file copy.txt"; "folder" → "folder copy"
+    const dot=name.lastIndexOf('.');
+    const newName = dot>0 ? (name.slice(0,dot)+' copy'+name.slice(dot)) : (name+' copy');
+    try{
+        const d=await apiCopy(p,joinPath(dir,newName),false);
+        if(d.success){showToast('duplicated','success');await FM.refresh();}
+        else{showToast(d.error||d.message,'error')}
+    }catch(e){showToast('duplicate failed: '+e.message,'error')}
+}
+
+async function pasteInto(destDir){
+    if(!state.clipboard||state.clipboard.paths.length===0)return;
+    const {op,paths}=state.clipboard;
+    let ok=0,fail=0;
+    for(const src of paths){
+        const name=baseName(src);
+        const dst=joinPath(destDir,name);
+        if(src===dst){fail++;continue}
+        try{
+            const d = op==='cut' ? await apiMove(src,dst) : await apiCopy(src,dst,false);
+            if(d.success)ok++;else fail++;
+        }catch(e){fail++}
+    }
+    if(op==='cut')state.clipboard=null;
+    showToast('paste: '+ok+' ok, '+fail+' failed',fail?'error':'success');
+    await FM.refresh();
+}
+
+async function showHistory(path){
+    try{
+        const r=await fetch(API+'/files/history?path='+encodeURIComponent(path));
+        const d=await r.json();
+        let html='<div style="padding:16px;max-width:680px;max-height:70vh;overflow:auto;background:#252526;color:#ccc;border:1px solid #454545;border-radius:6px;box-shadow:0 8px 32px #000a">';
+        html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><strong>History: '+esc(path)+'</strong><button id="fmh-x" style="background:none;border:none;color:#ccc;font-size:18px;cursor:pointer">&times;</button></div>';
+        if(!d.success){
+            html+='<div style="color:#f48771">'+esc(d.message||d.error||'unavailable')+'</div>';
+        } else if(!d.commits||d.commits.length===0){
+            html+='<div style="opacity:.6">No history yet. Commits are recorded from the next modification.</div>';
+        } else {
+            html+='<table style="width:100%%;font-size:12px;border-collapse:collapse"><thead><tr style="border-bottom:1px solid #454545;text-align:left"><th style="padding:4px">SHA</th><th style="padding:4px">Author</th><th style="padding:4px">When</th><th style="padding:4px">Message</th><th style="padding:4px"></th></tr></thead><tbody>';
+            for(let i=0;i<d.commits.length;i++){
+                const c=d.commits[i];
+                const when=new Date(c.timestamp_unix*1000).toLocaleString();
+                const btn = i===0
+                    ? '<span style="opacity:.4;font-size:11px">current</span>'
+                    : '<button class="fmh-restore" data-sha="'+esc(c.sha)+'" style="background:#0e639c;border:none;color:#fff;padding:2px 8px;border-radius:3px;font-size:11px;cursor:pointer">restore</button>';
+                html+='<tr style="border-bottom:1px solid #333"><td style="padding:4px;font-family:monospace">'+esc(c.sha)+'</td><td style="padding:4px">'+esc(c.author||'')+'</td><td style="padding:4px;white-space:nowrap">'+esc(when)+'</td><td style="padding:4px">'+esc(c.message||'')+'</td><td style="padding:4px;text-align:right">'+btn+'</td></tr>';
+            }
+            html+='</tbody></table>';
+        }
+        html+='</div>';
+        const ov=document.createElement('div');
+        ov.style.cssText='position:fixed;inset:0;z-index:500;background:#0008;display:flex;align-items:center;justify-content:center';
+        ov.innerHTML=html;
+        ov.addEventListener('click',function(e){if(e.target===ov||e.target.id==='fmh-x')ov.remove()});
+        ov.addEventListener('click',async function(e){
+            if(e.target.classList&&e.target.classList.contains('fmh-restore')){
+                const sha=e.target.dataset.sha;
+                if(!confirm('Restore "'+path+'" to '+sha+'? A new rollback commit will be created.'))return;
+                e.target.disabled=true;e.target.textContent='…';
+                try{
+                    const r=await fetch(API+'/files/restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path,commit_sha:sha})});
+                    const res=await r.json();
+                    if(res.success){
+                        showToast('restored (new commit '+(res.commit_sha||'')+')','success');
+                        // refresh content if this file is open in a tab
+                        const t=state.tabs.find(t=>t.path===path);
+                        if(t){const rd=await apiRead(path);if(rd.content!==undefined){t.origContent=atob(rd.content);if(t.model)t.model.setValue(t.origContent);t.modified=false;renderTabs();}}
+                        ov.remove();showHistory(path);
+                    } else {
+                        showToast(res.error||res.message||'restore failed','error');
+                        e.target.disabled=false;e.target.textContent='restore';
+                    }
+                }catch(err){showToast('restore failed: '+err.message,'error');e.target.disabled=false;e.target.textContent='restore'}
+            }
+        });
+        document.body.appendChild(ov);
+    }catch(e){showToast('history load failed: '+e.message,'error')}
+}
+
+async function moveIntoDir(paths,destDir){
+    let ok=0,fail=0;
+    for(const src of paths){
+        const dst=joinPath(destDir,baseName(src));
+        if(src===dst||dst.startsWith(src+'/')){fail++;continue}
+        try{
+            const d=await apiMove(src,dst);
+            if(d.success)ok++;else fail++;
+        }catch(e){fail++}
+    }
+    showToast('move: '+ok+' ok, '+fail+' failed',fail?'error':'success');
+    state.selected.clear();
+    await FM.refresh();
+}
+
+// Keyboard shortcuts: Delete, Ctrl+C / Ctrl+X / Ctrl+V, F2 rename, Ctrl+D duplicate
+document.addEventListener('keydown',function(e){
+    // skip while typing in inputs / editor
+    const tgt=e.target;
+    if(tgt&&(tgt.tagName==='INPUT'||tgt.tagName==='TEXTAREA'||tgt.isContentEditable))return;
+    const wrap=document.querySelector('.fm-wrap');
+    if(!wrap)return;
+    const sel=Array.from(state.selected);
+    if(e.key==='Delete'&&sel.length){e.preventDefault();deleteItems(sel);return}
+    if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='c'&&sel.length){e.preventDefault();state.clipboard={op:'copy',paths:sel};showToast('copied '+sel.length,'info');return}
+    if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='x'&&sel.length){e.preventDefault();state.clipboard={op:'cut',paths:sel};showToast('cut '+sel.length,'info');renderTree();return}
+    if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='v'&&state.clipboard){e.preventDefault();pasteInto(getSelDir()||'');return}
+    if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='d'&&sel.length===1){e.preventDefault();duplicateItem(sel[0]);return}
+    if(e.key==='F2'&&sel.length===1){e.preventDefault();renameItem(sel[0]);return}
+});
+
+async function deleteItems(paths){
+    if(paths.length===1){
+        const p=paths[0];
+        const node=findNode(state.tree,p);
+        return deleteItem(p,node?node.is_dir:false);
+    }
+    if(!confirm('delete '+paths.length+' item(s)?'))return;
+    try{
+        const d=await apiBatchDelete(paths,true);
+        showToast('deleted '+d.succeeded+' / failed '+d.failed, d.failed?'error':'success');
+        paths.forEach(p=>{const t=state.tabs.find(t=>t.path===p);if(t){t.modified=false;closeTab(p)}});
+        state.selected.clear();
+        await FM.refresh();
+    }catch(e){showToast('delete failed: '+e.message,'error')}
 }
 function findNode(nodes,path){
     for(const n of nodes){if(n.path===path)return n;if(n.is_dir&&n.children.length){const f=findNode(n.children,path);if(f)return f;}}return null;

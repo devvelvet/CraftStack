@@ -25,6 +25,10 @@ const (
 	FileManagerService_DeleteFile_FullMethodName      = "/craftstack.FileManagerService/DeleteFile"
 	FileManagerService_CreateDirectory_FullMethodName = "/craftstack.FileManagerService/CreateDirectory"
 	FileManagerService_RenameFile_FullMethodName      = "/craftstack.FileManagerService/RenameFile"
+	FileManagerService_CopyFile_FullMethodName        = "/craftstack.FileManagerService/CopyFile"
+	FileManagerService_GitCommit_FullMethodName       = "/craftstack.FileManagerService/GitCommit"
+	FileManagerService_GitLog_FullMethodName          = "/craftstack.FileManagerService/GitLog"
+	FileManagerService_GitRestore_FullMethodName      = "/craftstack.FileManagerService/GitRestore"
 )
 
 // FileManagerServiceClient is the client API for FileManagerService service.
@@ -46,6 +50,17 @@ type FileManagerServiceClient interface {
 	CreateDirectory(ctx context.Context, in *CreateDirectoryRequest, opts ...grpc.CallOption) (*CreateDirectoryResponse, error)
 	// RenameFile renames/moves a file or directory.
 	RenameFile(ctx context.Context, in *RenameFileRequest, opts ...grpc.CallOption) (*RenameFileResponse, error)
+	// CopyFile copies a file or directory (recursive).
+	CopyFile(ctx context.Context, in *CopyFileRequest, opts ...grpc.CallOption) (*CopyFileResponse, error)
+	// GitCommit stages and commits paths inside the instance work_dir. Creates
+	// the git repo on first call. Best-effort — returns success:false if git
+	// isn't available on the host.
+	GitCommit(ctx context.Context, in *GitCommitRequest, opts ...grpc.CallOption) (*GitCommitResponse, error)
+	// GitLog returns recent commits touching a specific path.
+	GitLog(ctx context.Context, in *GitLogRequest, opts ...grpc.CallOption) (*GitLogResponse, error)
+	// GitRestore restores a file to the content it had at a specific commit.
+	// A new commit recording the rollback is created automatically.
+	GitRestore(ctx context.Context, in *GitRestoreRequest, opts ...grpc.CallOption) (*GitRestoreResponse, error)
 }
 
 type fileManagerServiceClient struct {
@@ -116,6 +131,46 @@ func (c *fileManagerServiceClient) RenameFile(ctx context.Context, in *RenameFil
 	return out, nil
 }
 
+func (c *fileManagerServiceClient) CopyFile(ctx context.Context, in *CopyFileRequest, opts ...grpc.CallOption) (*CopyFileResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CopyFileResponse)
+	err := c.cc.Invoke(ctx, FileManagerService_CopyFile_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fileManagerServiceClient) GitCommit(ctx context.Context, in *GitCommitRequest, opts ...grpc.CallOption) (*GitCommitResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GitCommitResponse)
+	err := c.cc.Invoke(ctx, FileManagerService_GitCommit_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fileManagerServiceClient) GitLog(ctx context.Context, in *GitLogRequest, opts ...grpc.CallOption) (*GitLogResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GitLogResponse)
+	err := c.cc.Invoke(ctx, FileManagerService_GitLog_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *fileManagerServiceClient) GitRestore(ctx context.Context, in *GitRestoreRequest, opts ...grpc.CallOption) (*GitRestoreResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GitRestoreResponse)
+	err := c.cc.Invoke(ctx, FileManagerService_GitRestore_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FileManagerServiceServer is the server API for FileManagerService service.
 // All implementations must embed UnimplementedFileManagerServiceServer
 // for forward compatibility.
@@ -135,6 +190,17 @@ type FileManagerServiceServer interface {
 	CreateDirectory(context.Context, *CreateDirectoryRequest) (*CreateDirectoryResponse, error)
 	// RenameFile renames/moves a file or directory.
 	RenameFile(context.Context, *RenameFileRequest) (*RenameFileResponse, error)
+	// CopyFile copies a file or directory (recursive).
+	CopyFile(context.Context, *CopyFileRequest) (*CopyFileResponse, error)
+	// GitCommit stages and commits paths inside the instance work_dir. Creates
+	// the git repo on first call. Best-effort — returns success:false if git
+	// isn't available on the host.
+	GitCommit(context.Context, *GitCommitRequest) (*GitCommitResponse, error)
+	// GitLog returns recent commits touching a specific path.
+	GitLog(context.Context, *GitLogRequest) (*GitLogResponse, error)
+	// GitRestore restores a file to the content it had at a specific commit.
+	// A new commit recording the rollback is created automatically.
+	GitRestore(context.Context, *GitRestoreRequest) (*GitRestoreResponse, error)
 	mustEmbedUnimplementedFileManagerServiceServer()
 }
 
@@ -162,6 +228,18 @@ func (UnimplementedFileManagerServiceServer) CreateDirectory(context.Context, *C
 }
 func (UnimplementedFileManagerServiceServer) RenameFile(context.Context, *RenameFileRequest) (*RenameFileResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RenameFile not implemented")
+}
+func (UnimplementedFileManagerServiceServer) CopyFile(context.Context, *CopyFileRequest) (*CopyFileResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CopyFile not implemented")
+}
+func (UnimplementedFileManagerServiceServer) GitCommit(context.Context, *GitCommitRequest) (*GitCommitResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GitCommit not implemented")
+}
+func (UnimplementedFileManagerServiceServer) GitLog(context.Context, *GitLogRequest) (*GitLogResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GitLog not implemented")
+}
+func (UnimplementedFileManagerServiceServer) GitRestore(context.Context, *GitRestoreRequest) (*GitRestoreResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GitRestore not implemented")
 }
 func (UnimplementedFileManagerServiceServer) mustEmbedUnimplementedFileManagerServiceServer() {}
 func (UnimplementedFileManagerServiceServer) testEmbeddedByValue()                            {}
@@ -292,6 +370,78 @@ func _FileManagerService_RenameFile_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FileManagerService_CopyFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CopyFileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileManagerServiceServer).CopyFile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FileManagerService_CopyFile_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileManagerServiceServer).CopyFile(ctx, req.(*CopyFileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FileManagerService_GitCommit_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GitCommitRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileManagerServiceServer).GitCommit(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FileManagerService_GitCommit_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileManagerServiceServer).GitCommit(ctx, req.(*GitCommitRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FileManagerService_GitLog_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GitLogRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileManagerServiceServer).GitLog(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FileManagerService_GitLog_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileManagerServiceServer).GitLog(ctx, req.(*GitLogRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _FileManagerService_GitRestore_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GitRestoreRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileManagerServiceServer).GitRestore(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FileManagerService_GitRestore_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileManagerServiceServer).GitRestore(ctx, req.(*GitRestoreRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // FileManagerService_ServiceDesc is the grpc.ServiceDesc for FileManagerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -322,6 +472,22 @@ var FileManagerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RenameFile",
 			Handler:    _FileManagerService_RenameFile_Handler,
+		},
+		{
+			MethodName: "CopyFile",
+			Handler:    _FileManagerService_CopyFile_Handler,
+		},
+		{
+			MethodName: "GitCommit",
+			Handler:    _FileManagerService_GitCommit_Handler,
+		},
+		{
+			MethodName: "GitLog",
+			Handler:    _FileManagerService_GitLog_Handler,
+		},
+		{
+			MethodName: "GitRestore",
+			Handler:    _FileManagerService_GitRestore_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

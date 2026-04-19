@@ -230,6 +230,8 @@ func auditTargetTypeLabel(targetType string) string {
 		return "sync"
 	case "backup":
 		return "backup"
+	case "file":
+		return "file"
 	default:
 		return targetType
 	}

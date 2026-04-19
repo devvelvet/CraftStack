@@ -777,6 +777,602 @@ func (x *RenameFileResponse) GetMessage() string {
 	return ""
 }
 
+type CopyFileRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	InstanceId    string                 `protobuf:"bytes,1,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`
+	SrcPath       string                 `protobuf:"bytes,2,opt,name=src_path,json=srcPath,proto3" json:"src_path,omitempty"`
+	DstPath       string                 `protobuf:"bytes,3,opt,name=dst_path,json=dstPath,proto3" json:"dst_path,omitempty"`
+	Overwrite     bool                   `protobuf:"varint,4,opt,name=overwrite,proto3" json:"overwrite,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CopyFileRequest) Reset() {
+	*x = CopyFileRequest{}
+	mi := &file_craftstack_files_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CopyFileRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CopyFileRequest) ProtoMessage() {}
+
+func (x *CopyFileRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_craftstack_files_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CopyFileRequest.ProtoReflect.Descriptor instead.
+func (*CopyFileRequest) Descriptor() ([]byte, []int) {
+	return file_craftstack_files_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *CopyFileRequest) GetInstanceId() string {
+	if x != nil {
+		return x.InstanceId
+	}
+	return ""
+}
+
+func (x *CopyFileRequest) GetSrcPath() string {
+	if x != nil {
+		return x.SrcPath
+	}
+	return ""
+}
+
+func (x *CopyFileRequest) GetDstPath() string {
+	if x != nil {
+		return x.DstPath
+	}
+	return ""
+}
+
+func (x *CopyFileRequest) GetOverwrite() bool {
+	if x != nil {
+		return x.Overwrite
+	}
+	return false
+}
+
+type CopyFileResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CopyFileResponse) Reset() {
+	*x = CopyFileResponse{}
+	mi := &file_craftstack_files_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CopyFileResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CopyFileResponse) ProtoMessage() {}
+
+func (x *CopyFileResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_craftstack_files_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CopyFileResponse.ProtoReflect.Descriptor instead.
+func (*CopyFileResponse) Descriptor() ([]byte, []int) {
+	return file_craftstack_files_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *CopyFileResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *CopyFileResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+type GitCommitRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	InstanceId    string                 `protobuf:"bytes,1,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`
+	Paths         []string               `protobuf:"bytes,2,rep,name=paths,proto3" json:"paths,omitempty"`                                // paths to stage (relative to work_dir). empty = all
+	Message       string                 `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`                            // commit message
+	AuthorName    string                 `protobuf:"bytes,4,opt,name=author_name,json=authorName,proto3" json:"author_name,omitempty"`    // git author.name
+	AuthorEmail   string                 `protobuf:"bytes,5,opt,name=author_email,json=authorEmail,proto3" json:"author_email,omitempty"` // git author.email
+	AllowEmpty    bool                   `protobuf:"varint,6,opt,name=allow_empty,json=allowEmpty,proto3" json:"allow_empty,omitempty"`   // commit even if no changes
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GitCommitRequest) Reset() {
+	*x = GitCommitRequest{}
+	mi := &file_craftstack_files_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GitCommitRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GitCommitRequest) ProtoMessage() {}
+
+func (x *GitCommitRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_craftstack_files_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GitCommitRequest.ProtoReflect.Descriptor instead.
+func (*GitCommitRequest) Descriptor() ([]byte, []int) {
+	return file_craftstack_files_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *GitCommitRequest) GetInstanceId() string {
+	if x != nil {
+		return x.InstanceId
+	}
+	return ""
+}
+
+func (x *GitCommitRequest) GetPaths() []string {
+	if x != nil {
+		return x.Paths
+	}
+	return nil
+}
+
+func (x *GitCommitRequest) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *GitCommitRequest) GetAuthorName() string {
+	if x != nil {
+		return x.AuthorName
+	}
+	return ""
+}
+
+func (x *GitCommitRequest) GetAuthorEmail() string {
+	if x != nil {
+		return x.AuthorEmail
+	}
+	return ""
+}
+
+func (x *GitCommitRequest) GetAllowEmpty() bool {
+	if x != nil {
+		return x.AllowEmpty
+	}
+	return false
+}
+
+type GitCommitResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	CommitSha     string                 `protobuf:"bytes,3,opt,name=commit_sha,json=commitSha,proto3" json:"commit_sha,omitempty"` // short SHA when success
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GitCommitResponse) Reset() {
+	*x = GitCommitResponse{}
+	mi := &file_craftstack_files_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GitCommitResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GitCommitResponse) ProtoMessage() {}
+
+func (x *GitCommitResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_craftstack_files_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GitCommitResponse.ProtoReflect.Descriptor instead.
+func (*GitCommitResponse) Descriptor() ([]byte, []int) {
+	return file_craftstack_files_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *GitCommitResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *GitCommitResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *GitCommitResponse) GetCommitSha() string {
+	if x != nil {
+		return x.CommitSha
+	}
+	return ""
+}
+
+type GitLogRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	InstanceId    string                 `protobuf:"bytes,1,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`
+	Path          string                 `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`    // file/dir path (empty = whole repo)
+	Limit         int32                  `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"` // default 20
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GitLogRequest) Reset() {
+	*x = GitLogRequest{}
+	mi := &file_craftstack_files_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GitLogRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GitLogRequest) ProtoMessage() {}
+
+func (x *GitLogRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_craftstack_files_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GitLogRequest.ProtoReflect.Descriptor instead.
+func (*GitLogRequest) Descriptor() ([]byte, []int) {
+	return file_craftstack_files_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *GitLogRequest) GetInstanceId() string {
+	if x != nil {
+		return x.InstanceId
+	}
+	return ""
+}
+
+func (x *GitLogRequest) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+func (x *GitLogRequest) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+type GitLogResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	Commits       []*GitCommitEntry      `protobuf:"bytes,3,rep,name=commits,proto3" json:"commits,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GitLogResponse) Reset() {
+	*x = GitLogResponse{}
+	mi := &file_craftstack_files_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GitLogResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GitLogResponse) ProtoMessage() {}
+
+func (x *GitLogResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_craftstack_files_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GitLogResponse.ProtoReflect.Descriptor instead.
+func (*GitLogResponse) Descriptor() ([]byte, []int) {
+	return file_craftstack_files_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *GitLogResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *GitLogResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *GitLogResponse) GetCommits() []*GitCommitEntry {
+	if x != nil {
+		return x.Commits
+	}
+	return nil
+}
+
+type GitCommitEntry struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Sha           string                 `protobuf:"bytes,1,opt,name=sha,proto3" json:"sha,omitempty"`
+	Author        string                 `protobuf:"bytes,2,opt,name=author,proto3" json:"author,omitempty"`
+	Email         string                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
+	TimestampUnix int64                  `protobuf:"varint,4,opt,name=timestamp_unix,json=timestampUnix,proto3" json:"timestamp_unix,omitempty"`
+	Message       string                 `protobuf:"bytes,5,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GitCommitEntry) Reset() {
+	*x = GitCommitEntry{}
+	mi := &file_craftstack_files_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GitCommitEntry) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GitCommitEntry) ProtoMessage() {}
+
+func (x *GitCommitEntry) ProtoReflect() protoreflect.Message {
+	mi := &file_craftstack_files_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GitCommitEntry.ProtoReflect.Descriptor instead.
+func (*GitCommitEntry) Descriptor() ([]byte, []int) {
+	return file_craftstack_files_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *GitCommitEntry) GetSha() string {
+	if x != nil {
+		return x.Sha
+	}
+	return ""
+}
+
+func (x *GitCommitEntry) GetAuthor() string {
+	if x != nil {
+		return x.Author
+	}
+	return ""
+}
+
+func (x *GitCommitEntry) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *GitCommitEntry) GetTimestampUnix() int64 {
+	if x != nil {
+		return x.TimestampUnix
+	}
+	return 0
+}
+
+func (x *GitCommitEntry) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+type GitRestoreRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	InstanceId    string                 `protobuf:"bytes,1,opt,name=instance_id,json=instanceId,proto3" json:"instance_id,omitempty"`
+	Path          string                 `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`                            // file path relative to work_dir (required)
+	CommitSha     string                 `protobuf:"bytes,3,opt,name=commit_sha,json=commitSha,proto3" json:"commit_sha,omitempty"` // source commit; required
+	AuthorName    string                 `protobuf:"bytes,4,opt,name=author_name,json=authorName,proto3" json:"author_name,omitempty"`
+	AuthorEmail   string                 `protobuf:"bytes,5,opt,name=author_email,json=authorEmail,proto3" json:"author_email,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GitRestoreRequest) Reset() {
+	*x = GitRestoreRequest{}
+	mi := &file_craftstack_files_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GitRestoreRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GitRestoreRequest) ProtoMessage() {}
+
+func (x *GitRestoreRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_craftstack_files_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GitRestoreRequest.ProtoReflect.Descriptor instead.
+func (*GitRestoreRequest) Descriptor() ([]byte, []int) {
+	return file_craftstack_files_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *GitRestoreRequest) GetInstanceId() string {
+	if x != nil {
+		return x.InstanceId
+	}
+	return ""
+}
+
+func (x *GitRestoreRequest) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+func (x *GitRestoreRequest) GetCommitSha() string {
+	if x != nil {
+		return x.CommitSha
+	}
+	return ""
+}
+
+func (x *GitRestoreRequest) GetAuthorName() string {
+	if x != nil {
+		return x.AuthorName
+	}
+	return ""
+}
+
+func (x *GitRestoreRequest) GetAuthorEmail() string {
+	if x != nil {
+		return x.AuthorEmail
+	}
+	return ""
+}
+
+type GitRestoreResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	CommitSha     string                 `protobuf:"bytes,3,opt,name=commit_sha,json=commitSha,proto3" json:"commit_sha,omitempty"` // SHA of the new rollback commit
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GitRestoreResponse) Reset() {
+	*x = GitRestoreResponse{}
+	mi := &file_craftstack_files_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GitRestoreResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GitRestoreResponse) ProtoMessage() {}
+
+func (x *GitRestoreResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_craftstack_files_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GitRestoreResponse.ProtoReflect.Descriptor instead.
+func (*GitRestoreResponse) Descriptor() ([]byte, []int) {
+	return file_craftstack_files_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *GitRestoreResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *GitRestoreResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *GitRestoreResponse) GetCommitSha() string {
+	if x != nil {
+		return x.CommitSha
+	}
+	return ""
+}
+
 var File_craftstack_files_proto protoreflect.FileDescriptor
 
 const file_craftstack_files_proto_rawDesc = "" +
@@ -838,7 +1434,60 @@ const file_craftstack_files_proto_rawDesc = "" +
 	"\bnew_path\x18\x03 \x01(\tR\anewPath\"H\n" +
 	"\x12RenameFileResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage2\xf1\x03\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"\x86\x01\n" +
+	"\x0fCopyFileRequest\x12\x1f\n" +
+	"\vinstance_id\x18\x01 \x01(\tR\n" +
+	"instanceId\x12\x19\n" +
+	"\bsrc_path\x18\x02 \x01(\tR\asrcPath\x12\x19\n" +
+	"\bdst_path\x18\x03 \x01(\tR\adstPath\x12\x1c\n" +
+	"\toverwrite\x18\x04 \x01(\bR\toverwrite\"F\n" +
+	"\x10CopyFileResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"\xc8\x01\n" +
+	"\x10GitCommitRequest\x12\x1f\n" +
+	"\vinstance_id\x18\x01 \x01(\tR\n" +
+	"instanceId\x12\x14\n" +
+	"\x05paths\x18\x02 \x03(\tR\x05paths\x12\x18\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage\x12\x1f\n" +
+	"\vauthor_name\x18\x04 \x01(\tR\n" +
+	"authorName\x12!\n" +
+	"\fauthor_email\x18\x05 \x01(\tR\vauthorEmail\x12\x1f\n" +
+	"\vallow_empty\x18\x06 \x01(\bR\n" +
+	"allowEmpty\"f\n" +
+	"\x11GitCommitResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12\x1d\n" +
+	"\n" +
+	"commit_sha\x18\x03 \x01(\tR\tcommitSha\"Z\n" +
+	"\rGitLogRequest\x12\x1f\n" +
+	"\vinstance_id\x18\x01 \x01(\tR\n" +
+	"instanceId\x12\x12\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\x12\x14\n" +
+	"\x05limit\x18\x03 \x01(\x05R\x05limit\"z\n" +
+	"\x0eGitLogResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x124\n" +
+	"\acommits\x18\x03 \x03(\v2\x1a.craftstack.GitCommitEntryR\acommits\"\x91\x01\n" +
+	"\x0eGitCommitEntry\x12\x10\n" +
+	"\x03sha\x18\x01 \x01(\tR\x03sha\x12\x16\n" +
+	"\x06author\x18\x02 \x01(\tR\x06author\x12\x14\n" +
+	"\x05email\x18\x03 \x01(\tR\x05email\x12%\n" +
+	"\x0etimestamp_unix\x18\x04 \x01(\x03R\rtimestampUnix\x12\x18\n" +
+	"\amessage\x18\x05 \x01(\tR\amessage\"\xab\x01\n" +
+	"\x11GitRestoreRequest\x12\x1f\n" +
+	"\vinstance_id\x18\x01 \x01(\tR\n" +
+	"instanceId\x12\x12\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\x12\x1d\n" +
+	"\n" +
+	"commit_sha\x18\x03 \x01(\tR\tcommitSha\x12\x1f\n" +
+	"\vauthor_name\x18\x04 \x01(\tR\n" +
+	"authorName\x12!\n" +
+	"\fauthor_email\x18\x05 \x01(\tR\vauthorEmail\"g\n" +
+	"\x12GitRestoreResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12\x1d\n" +
+	"\n" +
+	"commit_sha\x18\x03 \x01(\tR\tcommitSha2\x90\x06\n" +
 	"\x12FileManagerService\x12T\n" +
 	"\rListDirectory\x12 .craftstack.ListDirectoryRequest\x1a!.craftstack.ListDirectoryResponse\x12E\n" +
 	"\bReadFile\x12\x1b.craftstack.ReadFileRequest\x1a\x1c.craftstack.ReadFileResponse\x12H\n" +
@@ -847,7 +1496,12 @@ const file_craftstack_files_proto_rawDesc = "" +
 	"DeleteFile\x12\x1d.craftstack.DeleteFileRequest\x1a\x1e.craftstack.DeleteFileResponse\x12Z\n" +
 	"\x0fCreateDirectory\x12\".craftstack.CreateDirectoryRequest\x1a#.craftstack.CreateDirectoryResponse\x12K\n" +
 	"\n" +
-	"RenameFile\x12\x1d.craftstack.RenameFileRequest\x1a\x1e.craftstack.RenameFileResponseB!Z\x1fcraftstack/gen/proto/craftstackb\x06proto3"
+	"RenameFile\x12\x1d.craftstack.RenameFileRequest\x1a\x1e.craftstack.RenameFileResponse\x12E\n" +
+	"\bCopyFile\x12\x1b.craftstack.CopyFileRequest\x1a\x1c.craftstack.CopyFileResponse\x12H\n" +
+	"\tGitCommit\x12\x1c.craftstack.GitCommitRequest\x1a\x1d.craftstack.GitCommitResponse\x12?\n" +
+	"\x06GitLog\x12\x19.craftstack.GitLogRequest\x1a\x1a.craftstack.GitLogResponse\x12K\n" +
+	"\n" +
+	"GitRestore\x12\x1d.craftstack.GitRestoreRequest\x1a\x1e.craftstack.GitRestoreResponseB!Z\x1fcraftstack/gen/proto/craftstackb\x06proto3"
 
 var (
 	file_craftstack_files_proto_rawDescOnce sync.Once
@@ -861,7 +1515,7 @@ func file_craftstack_files_proto_rawDescGZIP() []byte {
 	return file_craftstack_files_proto_rawDescData
 }
 
-var file_craftstack_files_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_craftstack_files_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_craftstack_files_proto_goTypes = []any{
 	(*ListDirectoryRequest)(nil),    // 0: craftstack.ListDirectoryRequest
 	(*ListDirectoryResponse)(nil),   // 1: craftstack.ListDirectoryResponse
@@ -876,26 +1530,44 @@ var file_craftstack_files_proto_goTypes = []any{
 	(*CreateDirectoryResponse)(nil), // 10: craftstack.CreateDirectoryResponse
 	(*RenameFileRequest)(nil),       // 11: craftstack.RenameFileRequest
 	(*RenameFileResponse)(nil),      // 12: craftstack.RenameFileResponse
+	(*CopyFileRequest)(nil),         // 13: craftstack.CopyFileRequest
+	(*CopyFileResponse)(nil),        // 14: craftstack.CopyFileResponse
+	(*GitCommitRequest)(nil),        // 15: craftstack.GitCommitRequest
+	(*GitCommitResponse)(nil),       // 16: craftstack.GitCommitResponse
+	(*GitLogRequest)(nil),           // 17: craftstack.GitLogRequest
+	(*GitLogResponse)(nil),          // 18: craftstack.GitLogResponse
+	(*GitCommitEntry)(nil),          // 19: craftstack.GitCommitEntry
+	(*GitRestoreRequest)(nil),       // 20: craftstack.GitRestoreRequest
+	(*GitRestoreResponse)(nil),      // 21: craftstack.GitRestoreResponse
 }
 var file_craftstack_files_proto_depIdxs = []int32{
 	2,  // 0: craftstack.ListDirectoryResponse.entries:type_name -> craftstack.FileEntry
-	0,  // 1: craftstack.FileManagerService.ListDirectory:input_type -> craftstack.ListDirectoryRequest
-	3,  // 2: craftstack.FileManagerService.ReadFile:input_type -> craftstack.ReadFileRequest
-	5,  // 3: craftstack.FileManagerService.WriteFile:input_type -> craftstack.WriteFileRequest
-	7,  // 4: craftstack.FileManagerService.DeleteFile:input_type -> craftstack.DeleteFileRequest
-	9,  // 5: craftstack.FileManagerService.CreateDirectory:input_type -> craftstack.CreateDirectoryRequest
-	11, // 6: craftstack.FileManagerService.RenameFile:input_type -> craftstack.RenameFileRequest
-	1,  // 7: craftstack.FileManagerService.ListDirectory:output_type -> craftstack.ListDirectoryResponse
-	4,  // 8: craftstack.FileManagerService.ReadFile:output_type -> craftstack.ReadFileResponse
-	6,  // 9: craftstack.FileManagerService.WriteFile:output_type -> craftstack.WriteFileResponse
-	8,  // 10: craftstack.FileManagerService.DeleteFile:output_type -> craftstack.DeleteFileResponse
-	10, // 11: craftstack.FileManagerService.CreateDirectory:output_type -> craftstack.CreateDirectoryResponse
-	12, // 12: craftstack.FileManagerService.RenameFile:output_type -> craftstack.RenameFileResponse
-	7,  // [7:13] is the sub-list for method output_type
-	1,  // [1:7] is the sub-list for method input_type
-	1,  // [1:1] is the sub-list for extension type_name
-	1,  // [1:1] is the sub-list for extension extendee
-	0,  // [0:1] is the sub-list for field type_name
+	19, // 1: craftstack.GitLogResponse.commits:type_name -> craftstack.GitCommitEntry
+	0,  // 2: craftstack.FileManagerService.ListDirectory:input_type -> craftstack.ListDirectoryRequest
+	3,  // 3: craftstack.FileManagerService.ReadFile:input_type -> craftstack.ReadFileRequest
+	5,  // 4: craftstack.FileManagerService.WriteFile:input_type -> craftstack.WriteFileRequest
+	7,  // 5: craftstack.FileManagerService.DeleteFile:input_type -> craftstack.DeleteFileRequest
+	9,  // 6: craftstack.FileManagerService.CreateDirectory:input_type -> craftstack.CreateDirectoryRequest
+	11, // 7: craftstack.FileManagerService.RenameFile:input_type -> craftstack.RenameFileRequest
+	13, // 8: craftstack.FileManagerService.CopyFile:input_type -> craftstack.CopyFileRequest
+	15, // 9: craftstack.FileManagerService.GitCommit:input_type -> craftstack.GitCommitRequest
+	17, // 10: craftstack.FileManagerService.GitLog:input_type -> craftstack.GitLogRequest
+	20, // 11: craftstack.FileManagerService.GitRestore:input_type -> craftstack.GitRestoreRequest
+	1,  // 12: craftstack.FileManagerService.ListDirectory:output_type -> craftstack.ListDirectoryResponse
+	4,  // 13: craftstack.FileManagerService.ReadFile:output_type -> craftstack.ReadFileResponse
+	6,  // 14: craftstack.FileManagerService.WriteFile:output_type -> craftstack.WriteFileResponse
+	8,  // 15: craftstack.FileManagerService.DeleteFile:output_type -> craftstack.DeleteFileResponse
+	10, // 16: craftstack.FileManagerService.CreateDirectory:output_type -> craftstack.CreateDirectoryResponse
+	12, // 17: craftstack.FileManagerService.RenameFile:output_type -> craftstack.RenameFileResponse
+	14, // 18: craftstack.FileManagerService.CopyFile:output_type -> craftstack.CopyFileResponse
+	16, // 19: craftstack.FileManagerService.GitCommit:output_type -> craftstack.GitCommitResponse
+	18, // 20: craftstack.FileManagerService.GitLog:output_type -> craftstack.GitLogResponse
+	21, // 21: craftstack.FileManagerService.GitRestore:output_type -> craftstack.GitRestoreResponse
+	12, // [12:22] is the sub-list for method output_type
+	2,  // [2:12] is the sub-list for method input_type
+	2,  // [2:2] is the sub-list for extension type_name
+	2,  // [2:2] is the sub-list for extension extendee
+	0,  // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_craftstack_files_proto_init() }
@@ -909,7 +1581,7 @@ func file_craftstack_files_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_craftstack_files_proto_rawDesc), len(file_craftstack_files_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   13,
+			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

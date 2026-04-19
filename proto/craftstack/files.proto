@@ -24,6 +24,21 @@ service FileManagerService {
 
   // RenameFile renames/moves a file or directory.
   rpc RenameFile(RenameFileRequest) returns (RenameFileResponse);
+
+  // CopyFile copies a file or directory (recursive).
+  rpc CopyFile(CopyFileRequest) returns (CopyFileResponse);
+
+  // GitCommit stages and commits paths inside the instance work_dir. Creates
+  // the git repo on first call. Best-effort — returns success:false if git
+  // isn't available on the host.
+  rpc GitCommit(GitCommitRequest) returns (GitCommitResponse);
+
+  // GitLog returns recent commits touching a specific path.
+  rpc GitLog(GitLogRequest) returns (GitLogResponse);
+
+  // GitRestore restores a file to the content it had at a specific commit.
+  // A new commit recording the rollback is created automatically.
+  rpc GitRestore(GitRestoreRequest) returns (GitRestoreResponse);
 }
 
 // --- List Directory ---
@@ -111,4 +126,69 @@ message RenameFileRequest {
 message RenameFileResponse {
   bool success = 1;
   string message = 2;
+}
+
+// --- Copy ---
+
+message CopyFileRequest {
+  string instance_id = 1;
+  string src_path = 2;
+  string dst_path = 3;
+  bool overwrite = 4;
+}
+
+message CopyFileResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// --- Git ---
+
+message GitCommitRequest {
+  string instance_id = 1;
+  repeated string paths = 2;        // paths to stage (relative to work_dir). empty = all
+  string message = 3;               // commit message
+  string author_name = 4;           // git author.name
+  string author_email = 5;          // git author.email
+  bool allow_empty = 6;             // commit even if no changes
+}
+
+message GitCommitResponse {
+  bool success = 1;
+  string message = 2;
+  string commit_sha = 3;            // short SHA when success
+}
+
+message GitLogRequest {
+  string instance_id = 1;
+  string path = 2;                  // file/dir path (empty = whole repo)
+  int32 limit = 3;                  // default 20
+}
+
+message GitLogResponse {
+  bool success = 1;
+  string message = 2;
+  repeated GitCommitEntry commits = 3;
+}
+
+message GitCommitEntry {
+  string sha = 1;
+  string author = 2;
+  string email = 3;
+  int64 timestamp_unix = 4;
+  string message = 5;
+}
+
+message GitRestoreRequest {
+  string instance_id = 1;
+  string path = 2;             // file path relative to work_dir (required)
+  string commit_sha = 3;       // source commit; required
+  string author_name = 4;
+  string author_email = 5;
+}
+
+message GitRestoreResponse {
+  bool success = 1;
+  string message = 2;
+  string commit_sha = 3;       // SHA of the new rollback commit
 }
